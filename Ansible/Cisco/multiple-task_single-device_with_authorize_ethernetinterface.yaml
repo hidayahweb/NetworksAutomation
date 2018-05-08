@@ -1,0 +1,104 @@
+---
+
+- name: Playbook - Core_Only
+  hosts: core
+  gather_facts: false
+  connection: local
+
+  vars:
+    cli:
+      username: hidayahweb
+      password: cisco
+
+  tasks:
+    - name: TASK - enable ospf
+      ios_config:
+        provider: "{{ cli }}"
+        authorize: yes
+        parents: router ospf 1
+        lines:
+          - network 0.0.0.0 255.255.255.255 area 0
+
+      register: print_output
+
+    -  debug: var=print_output
+
+    
+    - name: Task - Interface Setting
+      ios_config:
+        provider: "{{ cli }}"
+        authorize: yes
+        parents: "interface {{ item.interface }}"
+        lines:
+          - "switchport access vlan {{ item.vlan }}"
+          - "switchport voice vlan {{ item.voice_vlan }}"
+
+        after:
+          - no shutdown
+      with_items:
+        - { interface : Ethernet0/1, vlan : 100, voice_vlan : 101 }
+        - { interface : Ethernet0/2, vlan : 10, voice_vlan : 101 }
+        - { interface : Ethernet0/3, vlan : 20, voice_vlan : 101 }
+
+      register: print_output
+
+    - debug: var=print_output
+
+
+    - name: Task - Change Vlan name
+      ios_config:
+        provider: "{{ cli }}"
+        authorize: yes
+        parents: "vlan {{ item.vlan }}"
+        lines:
+          - "name {{ item.vlan_name }}"
+
+      with_items:
+        - { vlan : 600, vlan_name : manajemen }
+        - { vlan : 700, vlan_name : accounting }
+
+
+      register: print_output
+
+    - debug: var=print_output
+
+
+
+    - name: add access-list
+      ios_config:
+        provider: "{{ cli }}"
+        authorize: yes
+        lines:
+          - access-list 10 permit 192.168.174.0 0.0.0.255
+          - access-list 10 permit 192.168.175.0 0.0.0.255 
+          - access-list 10 permit 192.168.176.0 0.0.0.255 
+
+      register: print_output
+
+    -  debug: var=print_output
+
+
+
+
+- name: Playbook - Access Only
+  hosts: access
+  gather_facts: false
+  connection: local
+
+  vars:
+    cli:
+      username: hidayahweb
+      password: cisco
+
+  tasks:
+    - name: TASK= acl 
+      ios_config:
+        provider: "{{ cli }}"
+        authorize: yes
+        parents: ip access-list extended ACCESS
+        lines:
+          - permit ip 192.168.174.0 0.0.0.255 any
+
+      register: print_output
+
+    -  debug: var=print_output

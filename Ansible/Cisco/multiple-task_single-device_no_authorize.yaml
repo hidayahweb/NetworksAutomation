@@ -1,0 +1,44 @@
+---
+
+- name: Automation - Core
+  hosts: core
+  gather_facts: false
+  connection: local
+
+  vars:
+    cli:
+      username: hidayahweb
+      password: cisco
+
+  tasks:
+    - name: add access list
+      ios_config:
+        provider: "{{ cli }}"
+        lines:
+          - access-list 1 permit 192.168.174.0 0.0.0.255
+
+
+      register: print_output
+
+    -  debug: var=print_output
+
+
+    
+    - name: Interface Setting
+      ios_config:
+        provider: "{{ cli }}"
+        parents: "interface {{ item.interface }}"
+        lines:
+          - "switchport access vlan {{ item.vlan }}"
+          - "switchport voice vlan {{ item.voice_vlan }}"
+        after:
+          - no shutdown
+      with_items:
+        - { interface : GigabitEthernet1/0, vlan : 100, voice_vlan : 101 }
+        - { interface : GigabitEthernet1/1, vlan : 10, voice_vlan : 101 }
+        - { interface : GigabitEthernet1/2, vlan : 20, voice_vlan : 101 }
+        - { interface : GigabitEthernet1/3, vlan : 30, voice_vlan : 101 }
+
+      register: print_output
+
+    -  debug: var=print_output
